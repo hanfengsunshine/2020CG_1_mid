@@ -1,0 +1,25 @@
+﻿  Building Custom Rule C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/CMakeLists.txt
+  glad.c
+  main.cpp
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec2.hpp(45): warning C4201: nonstandard extension used: nameless struct/union
+  c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec2.hpp(206): note: see reference to class template instantiation 'glm::tvec2<T,P>' being compiled
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec2.hpp(46): warning C4201: nonstandard extension used: nameless struct/union
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec2.hpp(47): warning C4201: nonstandard extension used: nameless struct/union
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec3.hpp(45): warning C4201: nonstandard extension used: nameless struct/union
+  c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec3.hpp(227): note: see reference to class template instantiation 'glm::tvec3<T,P>' being compiled
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec3.hpp(46): warning C4201: nonstandard extension used: nameless struct/union
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec3.hpp(47): warning C4201: nonstandard extension used: nameless struct/union
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec4.hpp(45): warning C4201: nonstandard extension used: nameless struct/union
+  c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec4.hpp(272): note: see reference to class template instantiation 'glm::tvec4<T,P>' being compiled
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec4.hpp(46): warning C4201: nonstandard extension used: nameless struct/union
+c:\users\fhanab\desktop\hkustpg\computergraphic\demo\ext\glm\glm\detail/type_vec4.hpp(47): warning C4201: nonstandard extension used: nameless struct/union
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(32): warning C4100: 'error': unreferenced formal parameter
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(42): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(44): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(40): warning C4100: 'mods': unreferenced formal parameter
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(40): warning C4100: 'scancode': unreferenced formal parameter
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(40): warning C4100: 'window': unreferenced formal parameter
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(188): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(49): warning C4100: 'argv': unreferenced formal parameter
+C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\src\main.cpp(49): warning C4100: 'argc': unreferenced formal parameter
+  OpenGLDemo.vcxproj -> C:\Users\fhanab\Desktop\HKUSTPG\ComputerGraphic\demo\build\Release\OpenGLDemo.exe

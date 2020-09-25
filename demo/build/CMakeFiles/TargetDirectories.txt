@@ -1,0 +1,6 @@
+C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/build/CMakeFiles/OpenGLDemo.dir
+C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/build/ext_build/glfw/CMakeFiles/ALL_BUILD.dir
+C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/build/ext_build/glfw/src/CMakeFiles/glfw_objects.dir
+C:/Users/fhanab/Desktop/HKUSTPG/ComputerGraphic/demo/build/ext_build/glfw/src/CMakeFiles/glfw.dir
