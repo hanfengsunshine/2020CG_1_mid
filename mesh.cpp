@@ -515,7 +515,7 @@ std::vector< int > Mesh::collectMeshStats() {
 	F = mFaceList.size();
 	B = countBoundaryLoops();
 	C = countConnectedComponents();
-	G = (E / 2 - V - F - B) / 2 + C; // here E / 2 as they are half edges
+	G = (E / 2 - V - F - B) / 2 + C; //  E / 2  half edges Fred 1. 2020 Oct 4
 
 	/*====== Programming Assignment 0 ======*/
 
@@ -546,8 +546,7 @@ int Mesh::countBoundaryLoops() {
 
 	// 2 fred not sure about this part 
 	for (int i = 0; i < mBHEdgeList.size(); ++i) {
-		HEdge* bEdge = mBHEdgeList[i];
-		// initialize to all unvisited 
+		HEdge* bEdge = mBHEdgeList[i];  // initial to unvisited 
 		bEdge->setFlag(false);
 	}
 	for (int i = 0; i < mBHEdgeList.size(); ++i) {
@@ -562,10 +561,24 @@ int Mesh::countBoundaryLoops() {
 			anEdge->setFlag(true); // visited
 			anEdge = anEdge->next();
 		}
-		// a boundary loop has been counted
+		// count a boundary loop 
 		count += 1;
 	}
 	return count;
+}
+   //  3.fred may change to BFS later , change the names and strucutures 
+void simpleDFS(HEdge* edge) {
+	if (edge->flag()) return;
+	edge->setFlag(true); // visited
+	// visit the children
+	HEdge* anedge = edge->next();
+	simpleDFS(anedge);
+	// visit neighbors
+	anedge = edge->twin()->next();
+	while (anedge != edge) {
+		simpleDFS(anedge);
+		anedge = anedge->twin()->next();
+	}
 }
 
 int Mesh::countConnectedComponents() {
@@ -587,6 +600,21 @@ int Mesh::countConnectedComponents() {
 
 	return count;
 }
+// 3. fred DFS, simple DFS 
+// why DFS? why not BFS because it would cause great  
+void simpleDFS(HEdge* edge) {
+	if (edge->flag()) return;
+	edge->setFlag(true); // visited
+	// visit the children
+	HEdge* anedge = edge->next();
+	simpleDFS(anedge);
+	// visit neighbors
+	anedge = edge->twin()->next();
+	while (anedge != edge) {
+		simpleDFS(anedge);
+		anedge = anedge->twin()->next();
+	}
+}
 
 void Mesh::computeVertexNormals() {
 	/*====== Programming Assignment 0 ======*/
@@ -602,7 +630,38 @@ void Mesh::computeVertexNormals() {
 	/**********************************************/
 
 	/*====== Programming Assignment 0 ======*/
-	
+	for (int i = 0; i < mVertexList.size(); ++i) {
+		//4. computeVertexNormals init normal fred
+
+		Eigen::Vector3f normal = Eigen::Vector3f::Zero();
+		// get neighbors by half-edges and collect the positions
+		// center + 2 adjacent neighbors should make a face
+		// 0 and size - 1 is adjacent
+		Vertex* center = mVertexList[i];
+		std::vector<Eigen::Vector3f> neighbors;
+		HEdge* edge = center->halfEdge();
+		neighbors.push_back(edge->end()->position());
+		HEdge* anedge = edge->twin()->next();
+		while (edge != anedge) {
+			neighbors.push_back(anedge->end()->position());
+			anedge = anedge->twin()->next();
+		}
+		// get normal and area of each face and plus together
+		double totalWeights = 0.0;
+		for (int j = 0; j < neighbors.size() - 1; ++j) {
+			double area = triangleArea(center->position(), neighbors[j + 1], neighbors[j]);
+			normal += triangleNormal(center->position(), neighbors[j + 1], neighbors[j]) * area;
+			totalWeights += area;
+		}
+		double lastArea = triangleArea(center->position(), neighbors[0], neighbors[neighbors.size() - 1]);
+		normal += triangleNormal(center->position(), neighbors[0], neighbors[neighbors.size() - 1]) * lastArea;
+		totalWeights += lastArea;
+		// average by weights
+		normal /= totalWeights;
+		normal.normalize();
+		// set normal
+		center->setNormal(normal);
+	}
 	// Notify mesh shaders
 	setVertexNormalDirty(true);
 }
