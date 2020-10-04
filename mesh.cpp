@@ -543,6 +543,28 @@ int Mesh::countBoundaryLoops() {
 
 	/*====== Programming Assignment 0 ======*/
 
+
+	// 2 fred not sure about this part 
+	for (int i = 0; i < mBHEdgeList.size(); ++i) {
+		HEdge* bEdge = mBHEdgeList[i];
+		// initialize to all unvisited 
+		bEdge->setFlag(false);
+	}
+	for (int i = 0; i < mBHEdgeList.size(); ++i) {
+		HEdge* bEdge = mBHEdgeList[i];
+		if (bEdge->flag()) {
+			// half-edge have been visited, counted in any boundary loops
+			continue;
+		}
+		bEdge->setFlag(true); // visited
+		HEdge* anEdge = bEdge->next();
+		while (anEdge != bEdge) {
+			anEdge->setFlag(true); // visited
+			anEdge = anEdge->next();
+		}
+		// a boundary loop has been counted
+		count += 1;
+	}
 	return count;
 }
 
