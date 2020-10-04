@@ -683,6 +683,68 @@ void Mesh::umbrellaSmooth(bool cotangentWeights) {
 		/* weights to avoid numerical issues.
 		/**********************************************/
 
+		// 5 fred double check Oct 4
+		int vertexNumber = mVertexList.size();
+		Eigen::SparseMatrix<double> Xt(vertexNumber, 3);
+		Eigen::SparseMatrix<double> P(vertexNumber, vertexNumber);
+		double lambda = 1.0;
+		// make sure all 0
+		Xt.setZero();
+		P.setZero();
+		// filling P and Xt
+		for (int i = 0; i < vertexNumber; ++i) {
+			Vertex* vertex = mVertexList[i];
+			// fill Xt with position
+			Eigen::Vector3f position = vertex->position();
+			Xt.coeffRef(i, 0) = position[0];
+			Xt.coeffRef(i, 1) = position[1];
+			Xt.coeffRef(i, 2) = position[2];
+			// fill P with corresponding weights
+			P.coeffRef(i, i) = -1.0;
+			// collect neighbors
+			std::vector<Vertex*> neighbors;
+			HEdge* edge = vertex->halfEdge();
+			neighbors.push_back(edge->end());
+			HEdge* anedge = edge->twin()->next();
+			while (edge != anedge) {
+				neighbors.push_back(anedge->end());
+				anedge = anedge->twin()->next();
+			}
+			// collect weights and column-indices
+			double totalWeights = 0.0;
+			Eigen::Vector3f centerPosition = vertex->position();
+			int length = neighbors.size();
+			std::vector<double> weights;
+			std::vector<int> indices;
+			for (int j = 0; j < length; ++j) {
+				int j_m1 = j - 1 < 0 ? j - 1 + length : j - 1;
+				int j_p1 = j + 1 >= length ? j + 1 - length : j + 1;
+				double weight = triangleCot(
+					centerPosition, neighbors[j_m1]->position(), neighbors[j]->position()
+				) + triangleCot(
+					centerPosition, neighbors[j_p1]->position(), neighbors[j]->position()
+				);
+				totalWeights += weight;
+				weights.push_back(weight);
+				indices.push_back(neighbors[j]->index());
+			}
+			// fill P with weights
+			for (int j = 0; j < length; ++j) {
+				P.coeffRef(i, indices[j]) = weights[j] / totalWeights;
+			}
+		}
+
+		// do matrix multiplication
+		Eigen::SparseMatrix<double> Xt_p1 = Xt + lambda * P * Xt;
+		// fill the result back to vertices
+		for (int i = 0; i < vertexNumber; ++i) {
+			Eigen::Vector3f position;
+			position[0] = Xt_p1.coeff(i, 0);
+			position[1] = Xt_p1.coeff(i, 1);
+			position[2] = Xt_p1.coeff(i, 2);
+			mVertexList[i]->setPosition(position);
+		}
+
 	} else {
 		/**********************************************/
 		/*          Insert your code here.            */
@@ -694,6 +756,46 @@ void Mesh::umbrellaSmooth(bool cotangentWeights) {
 
 	}
 
+	// 6 fred check the sparsematrix part 
+	int vertexNumber = mVertexList.size();
+	Eigen::SparseMatrix<double> Xt(vertexNumber, 3);
+	Eigen::SparseMatrix<double> P(vertexNumber, vertexNumber);
+	double lambda = 1.0;
+	// make sure all 0
+	Xt.setZero();
+	P.setZero();
+	// filling P and Xt
+	for (int i = 0; i < vertexNumber; ++i) {
+		Vertex* vertex = mVertexList[i];
+		// fill Xt with position
+		Eigen::Vector3f position = vertex->position();
+		Xt.coeffRef(i, 0) = position[0];
+		Xt.coeffRef(i, 1) = position[1];
+		Xt.coeffRef(i, 2) = position[2];
+		// fill P with corresponding weights
+		P.coeffRef(i, i) = -1.0;
+
+		double weight = 1.0 / ((double)vertex->valence());
+		HEdge* edge = vertex->halfEdge();
+		P.coeffRef(i, edge->end()->index()) = weight;
+		HEdge* anedge = edge->twin()->next();
+		while (edge != anedge) {
+			P.coeffRef(i, anedge->end()->index()) = weight;
+			anedge = anedge->twin()->next();
+		}
+	}
+
+	// do matrix multiplication
+	Eigen::SparseMatrix<double> Xt_p1 = Xt + lambda * P * Xt;
+	// fill the result back to vertices
+	for (int i = 0; i < vertexNumber; ++i) {
+		Eigen::Vector3f position;
+		position[0] = Xt_p1.coeff(i, 0);
+		position[1] = Xt_p1.coeff(i, 1);
+		position[2] = Xt_p1.coeff(i, 2);
+		mVertexList[i]->setPosition(position);
+	}
+}
 	/*====== Programming Assignment 1 ======*/
 
 	computeVertexNormals();
@@ -727,11 +829,66 @@ void Mesh::implicitUmbrellaSmooth(bool cotangentWeights) {
 		/* method.
 		/* Hint: https://en.wikipedia.org/wiki/Biconjugate_gradient_method
 		/**********************************************/
+
+		Eigen::VectorXf r = b - A * x;
+		Eigen::VectorXf r_star = r;
+		double rou = 1.0;
+		double alpha = 1.0;
+		double w = 1.0;
+		Eigen::VectorXf v = r;
+		Eigen::VectorXf p = r;
+		v.setZero(); p.setZero();
+		for (int i = 0; i < maxIterations; ++i) {
+			Eigen::VectorXf diff = b - A * x;
+			double error = diff.dot(diff);
+			if (error < errorTolerance) {
+				// very close, further calculation not needed
+				break;
+			}
+
+			// std::cout<<i<<" ";
+
+			double rou_next = r_star.dot(r);
+			double beta = (rou_next / rou) * (alpha / w);
+			Eigen::VectorXf p_next = r + beta * (p - w * v);
+			Eigen::VectorXf v_next = A * p_next;
+			alpha = rou_next / (r_star.dot(v_next));
+			Eigen::VectorXf h = x + alpha * p_next;
+
+			diff = b - A * h;
+			error = diff.dot(diff);
+			if (error < errorTolerance) {
+				x = h;
+				// very close, further calculation not needed
+				break;
+			}
+
+			Eigen::VectorXf s = r - alpha * v_next;
+			Eigen::VectorXf t = A * s;
+			double w_next = t.dot(s) / t.dot(t);
+			Eigen::VectorXf x_next = h + w_next * s;
+
+			Eigen::VectorXf r_next = s - w_next * t;
+			// replace values
+			r = r_next;
+			rou = rou_next;
+			w = w_next;
+			v = v_next;
+			p = p_next;
+			x = x_next;
+		}
+		// std::cout<<"result x "<<x<<std::endl;
+		return x;
 	};
+	
 
 	/* IMPORTANT:
 	/* Please refer to the following link about the sparse matrix construction in Eigen. */
 	/* http://eigen.tuxfamily.org/dox/group__TutorialSparse.html#title3 */
+	
+	// fred 7 
+	int MAX_ITERATIONS = 2000;
+	float ERROR_TOLERANCE = 1e-7;
 
 	if (cotangentWeights) {
 		/**********************************************/
@@ -747,7 +904,74 @@ void Mesh::implicitUmbrellaSmooth(bool cotangentWeights) {
 		/* It is advised to double type to store the
 		/* weights to avoid numerical issues.
 		/**********************************************/
+		int vertexNumber = mVertexList.size();
+		Eigen::SparseMatrix<double> Xt(vertexNumber, 3);
+		Eigen::SparseMatrix<float> P(vertexNumber, vertexNumber);
+		double lambda = 1.0;
+		// make sure all 0
+		Xt.setZero();
+		P.setZero();
+		// filling P and Xt
+		for (int i = 0; i < vertexNumber; ++i) {
+			Vertex* vertex = mVertexList[i];
+			// fill Xt with position
+			Eigen::Vector3f position = vertex->position();
+			Xt.coeffRef(i, 0) = position[0];
+			Xt.coeffRef(i, 1) = position[1];
+			Xt.coeffRef(i, 2) = position[2];
+			// fill P with corresponding weights
+			P.coeffRef(i, i) = 1.0 - lambda * (-1.0);
+			// collect neighbors
+			std::vector<Vertex*> neighbors;
+			HEdge* edge = vertex->halfEdge();
+			neighbors.push_back(edge->end());
+			HEdge* anedge = edge->twin()->next();
+			while (edge != anedge) {
+				neighbors.push_back(anedge->end());
+				anedge = anedge->twin()->next();
+			}
+			// collect weights and column-indices
+			double totalWeights = 0.0;
+			Eigen::Vector3f centerPosition = vertex->position();
+			int length = neighbors.size();
+			std::vector<double> weights;
+			std::vector<int> indices;
+			for (int j = 0; j < length; ++j) {
+				int j_m1 = j - 1 < 0 ? j - 1 + length : j - 1;
+				int j_p1 = j + 1 >= length ? j + 1 - length : j + 1;
+				double weight = triangleCot(
+					centerPosition, neighbors[j_m1]->position(), neighbors[j]->position()
+				) + triangleCot(
+					centerPosition, neighbors[j_p1]->position(), neighbors[j]->position()
+				);
+				totalWeights += weight;
+				weights.push_back(weight);
+				indices.push_back(neighbors[j]->index());
+			}
+			// fill P with weights
+			for (int j = 0; j < length; ++j) {
+				P.coeffRef(i, indices[j]) = -lambda * weights[j] / totalWeights;
+			}
+		}
 
+		// solve linear system
+		Eigen::MatrixXf Xt_p1(vertexNumber, 3);
+		Xt_p1.setZero();
+		for (int j = 0; j < 3; ++j) {
+			Eigen::VectorXf x(vertexNumber); x.setZero();
+			x = fnConjugateGradient(
+				P, Xt.col(j), MAX_ITERATIONS, ERROR_TOLERANCE, x
+			);
+			Xt_p1.col(j) = x;
+		}
+		// fill the result back to vertices
+		for (int i = 0; i < vertexNumber; ++i) {
+			Eigen::Vector3f position;
+			position[0] = Xt_p1.coeff(i, 0);
+			position[1] = Xt_p1.coeff(i, 1);
+			position[2] = Xt_p1.coeff(i, 2);
+			mVertexList[i]->setPosition(position);
+		}
 
 	} else {
 		/**********************************************/
@@ -759,7 +983,52 @@ void Mesh::implicitUmbrellaSmooth(bool cotangentWeights) {
 		/* the above fnConjugateGradient for solving
 		/* sparse linear systems.
 		/**********************************************/
+		int vertexNumber = mVertexList.size();
+		Eigen::SparseMatrix<double> Xt(vertexNumber, 3);
+		Eigen::SparseMatrix<float> P(vertexNumber, vertexNumber);
+		double lambda = 1.0;
+		// make sure all 0
+		Xt.setZero();
+		P.setZero();
+		// filling P and Xt
+		for (int i = 0; i < vertexNumber; ++i) {
+			Vertex* vertex = mVertexList[i];
+			// fill Xt with position
+			Eigen::Vector3f position = vertex->position();
+			Xt.coeffRef(i, 0) = position[0];
+			Xt.coeffRef(i, 1) = position[1];
+			Xt.coeffRef(i, 2) = position[2];
+			// fill P with corresponding weights
+			P.coeffRef(i, i) = 1.0 - lambda * (-1.0);
 
+			double weight = -lambda * 1.0 / ((double)vertex->valence());
+			HEdge* edge = vertex->halfEdge();
+			P.coeffRef(i, edge->end()->index()) = weight;
+			HEdge* anedge = edge->twin()->next();
+			while (edge != anedge) {
+				P.coeffRef(i, anedge->end()->index()) = weight;
+				anedge = anedge->twin()->next();
+			}
+		}
+
+		// solve linear system
+		Eigen::MatrixXf Xt_p1(vertexNumber, 3);
+		Xt_p1.setZero();
+		for (int j = 0; j < 3; ++j) {
+			Eigen::VectorXf x(vertexNumber); x.setZero();
+			x = fnConjugateGradient(
+				P, Xt.col(j), MAX_ITERATIONS, ERROR_TOLERANCE, x
+			);
+			Xt_p1.col(j) = x;
+		}
+		// fill the result back to vertices
+		for (int i = 0; i < vertexNumber; ++i) {
+			Eigen::Vector3f position;
+			position[0] = Xt_p1.coeff(i, 0);
+			position[1] = Xt_p1.coeff(i, 1);
+			position[2] = Xt_p1.coeff(i, 2);
+			mVertexList[i]->setPosition(position);
+		}
 	}
 
 	/*====== Programming Assignment 1 ======*/
